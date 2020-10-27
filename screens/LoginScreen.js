@@ -2,11 +2,8 @@ import React, { useState } from 'react';
 import firebase from 'firebase'
 import 'firebase/firestore';
 import 'firebase/auth'
-import { StyleSheet, Text, View, Button } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, Text, View } from 'react-native';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { useCollectionData } from 'react-firebase-hooks/firestore';
-import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { TextInput } from 'react-native-gesture-handler';
 import Btn from "../components/Btn";
@@ -26,13 +23,12 @@ if (!firebase.apps.length) {
 }
 
 const LogIn = (email, password, callback) => {
-    firebase.auth().signInWithEmailAndPassword(email, password).then(callback()).catch(err => console.log(err.code, err.message))
+    firebase.auth().signInWithEmailAndPassword(email, password).then(() => {
+        callback()
+    }).catch((err) => {
+        console.log(err.code, err.message)
+    })
 }
-
-const LogOut = () => {
-    firebase.auth().signOut().catch(err => console.log(err))
-}
-
 const SignUp = (email, password, handleSuccess) => {
     firebase.auth().createUserWithEmailAndPassword(email, password).then(() => {
         handleSuccess();
@@ -56,10 +52,10 @@ function SignUpChosen(props) {
                 <TextInput autoCapitalize='none' editable placeholder="Mobile Number" onChangeText={(text) => { setMnum(text) }} style={styles.textInput} />
                 <TextInput autoCapitalize='none' editable placeholder="Email" onChangeText={(text) => { setEmail(text) }} style={styles.textInput} />
                 <TextInput autoCapitalize='none' editable placeholder="Password" onChangeText={(text) => { setPass(text) }} style={styles.textInput} secureTextEntry />
-                <Btn text="Sign up" backgroundColor="red" onPress={() => {
+                <Btn text="Sign up" onPress={() => {
                     if (fname && lname && mnum && email && pass) {
                         SignUp(email, pass, () => {
-                            console.log(`worked!!!!`)
+                            props.onSuccess()
                         })
                     }
                 }} />
@@ -67,10 +63,14 @@ function SignUpChosen(props) {
         </>
     );
 }
+/*
+
+     */
 function MainDisplay({ navigation, onSuccess }) {
     const [user] = useAuthState(firebase.auth())
     const [pass, usePass] = useState(true);
     const [useremail, useUseremail] = useState(true)
+
     return (
         <View style={styles.container}>
             <View style={{ paddingTop: 90 }}>
@@ -82,26 +82,24 @@ function MainDisplay({ navigation, onSuccess }) {
                     <TextInput autoCapitalize='none' editable placeholder="Password" onChangeText={(text) => { usePass(text) }} style={styles.textInput} secureTextEntry={true} />
                 </View>
                 <View style={{ paddingTop: 20 }} >
-                    <Btn text="Log in" backgroundColor="red" onPress={() => { LogIn(useremail, pass, onSuccess) }} />
-                    <Btn text="Sign up" backgroundColor="red" onPress={() => { navigation.navigate('Signup') }} />
-                    <Btn text="Sign Out" backgroundColor="red" onPress={LogOut} />
-                </View>
-                <View>
-                    <Text>{user ? user.email : `not logged in`}</Text>
+                    <Btn text="Log in" onPress={() => { LogIn(useremail, pass, onSuccess) }} />
+                    <Btn text="Sign up" onPress={() => { navigation.navigate('Signup') }} />
                 </View>
             </View>
-            <StatusBar style="auto" />
         </View>
     );
+    //TODO: Handle Sign in errors
 }
 const Stack = createStackNavigator();
 function LoginScreen(props) {
     return (
         <Stack.Navigator initialRouteName="Login">
             <Stack.Screen name="Login" options={{ title: `Log in` }} >
-                {prop => <MainDisplay {...prop} onSuccess={props.onSuccess} />}
+                {prop => <MainDisplay {...prop} onSuccess={() => { props.onSuccess() }} />}
             </Stack.Screen>
-            <Stack.Screen name="Signup" component={SignUpChosen} options={{ title: `Sign up` }} />
+            <Stack.Screen name="Signup" options={{ title: `Sign up` }} >
+                {prop => <SignUpChosen {...prop} onSuccess={props.onSuccess} />}
+            </Stack.Screen>
         </Stack.Navigator>
     );
 }

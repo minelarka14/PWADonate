@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, StyleSheet, Text, View } from 'react-native';
 import firebase from 'firebase'
 import 'firebase/firestore';
@@ -7,7 +7,10 @@ import 'firebase/auth'
 import 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import LoginScreen from './screens/LoginScreen'
+import LoginScreen from './screens/LoginScreen';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import MainScreen from './screens/MainScreen';
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyC1lpIDveOquJa5I4dikobpWPK-iwqf_4w",
@@ -22,9 +25,17 @@ const firebaseConfig = {
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
-function Finished() {
+function Finished({ navigation }) {
   return (
-    <Text>hello world!</Text>
+    <>
+      <MainScreen logOutNavigate={() => {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'LoginScreen' }],
+        });
+      }} />
+    </>
+
   );
 }
 function Login({ navigation }) {
@@ -34,14 +45,31 @@ function Login({ navigation }) {
 }
 const Stack = createStackNavigator();
 function App() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="LoginScreen">
-        <Stack.Screen name="LoginScreen" component={Login} options={{ headerShown: false }} />
-        <Stack.Screen name="Finished" component={Finished} options={{ title: `Home page` }} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
+  var [user] = useAuthState(firebase.auth())
+  const [logged, setLogged] = useState(user ? `Finished` : `LoginScreen`)
+
+  firebase.auth().onAuthStateChanged(() => {
+    user ? setLogged(`Finished`) : setLogged(`LoginScreen`)
+  })
+  if (logged) {
+    return (
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName={`Finished`} >
+          <Stack.Screen name="LoginScreen" component={Login} options={{ headerShown: false, headerLeft: null }} />
+          <Stack.Screen name="Finished" component={Finished} options={{ title: `Home page`, headerLeft: null, gesturesEnabled: false, headerShown: false, }} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  } else {
+    return (
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName={`LoginScreen`} >
+          <Stack.Screen name="LoginScreen" component={Login} options={{ headerShown: false }} />
+          <Stack.Screen name="Finished" component={Finished} options={{ title: `Home page`, headerLeft: null, gesturesEnabled: false, headerShown: false, }} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  }
 }
 
 const styles = StyleSheet.create({

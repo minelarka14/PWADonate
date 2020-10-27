@@ -40,7 +40,12 @@ function Finished({ navigation }) {
 }
 function Login({ navigation }) {
   return (
-    <LoginScreen onSuccess={() => { navigation.navigate('Finished') }} />
+    <LoginScreen onSuccess={() => {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Finished' }],
+      })
+    }} />
   );
 }
 const Stack = createStackNavigator();

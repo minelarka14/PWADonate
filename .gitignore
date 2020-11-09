@@ -4,6 +4,7 @@
 
 ### dotenv ###
 .env
+env.js
 
 ### ReactNative ###
 # React Native Stack Base
